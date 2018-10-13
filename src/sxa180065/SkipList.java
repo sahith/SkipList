@@ -19,6 +19,7 @@ public class SkipList<T extends Comparable<? super T>> {
 	E element;
 	Entry[] next;
 	Entry prev;
+	int span[];
 
 	public Entry(E x, int lev) {
 	    element = x;
