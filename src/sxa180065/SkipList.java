@@ -102,7 +102,8 @@ public class SkipList<T extends Comparable<? super T>> {
 
     // Return first element of list
     public T first() {
-	return (T) head.next[0];
+	//if(size==0) { return null; }
+	return head.next[0].element;;
     }
 
     // Find largest element that is less than or equal to x
@@ -120,7 +121,7 @@ public class SkipList<T extends Comparable<? super T>> {
 	if(n < 0 || n > size-1) 
 		throw new NoSuchElementException();
 	Entry temp = head;
-	for(int i = 0;i <= n;i++)
+	for(int i = 0;i < n;i++)
 	{
 		temp = temp.next[0];
 	}
