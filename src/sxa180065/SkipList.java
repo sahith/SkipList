@@ -8,16 +8,16 @@ import java.util.Random;
 
 public class SkipList<T extends Comparable<? super T>> {
 	static final int PossibleLevels = 33;
-	Entry head, tail; // dummy nodes head and tail
+	Entry<T> head, tail; // dummy nodes head and tail
 	int size; // size of the skipList
 	int maxLevel;
-	Entry[] last; // used by find()
+	Entry<T>[] last; // used by find()
 	Random random;
 
 	static class Entry<E> {
 		E element;
-		Entry[] next;
-		Entry prev;
+		Entry<E>[] next;
+		Entry<E> prev;
 		int span[];
 
 		public Entry(E x, int lev) {
@@ -33,8 +33,8 @@ public class SkipList<T extends Comparable<? super T>> {
 
 	// Constructor
 	public SkipList() {
-		head = new Entry(null, PossibleLevels);
-		tail = new Entry(null, PossibleLevels);
+		head = new Entry<>(null, PossibleLevels);
+		tail = new Entry<>(null, PossibleLevels);
 		size = 0;
 		maxLevel = 1;
 		last = new Entry[PossibleLevels];
@@ -48,7 +48,7 @@ public class SkipList<T extends Comparable<? super T>> {
 
 	// Helper function to search for element x
 	public void find(T x) {
-		Entry temp = head;
+		Entry<T> temp = head;
 		int i = maxLevel - 1;
 		while (i >= 0) {
 			while (temp.next[i] != null && x.compareTo((T) (temp.next[i].element)) > 0) {
@@ -73,7 +73,7 @@ public class SkipList<T extends Comparable<? super T>> {
 		if (contains(x))
 			return false;
 		int level = chooseLevel();
-		Entry ent = new Entry(x, level);
+		Entry<T> ent = new Entry<T>(x, level);
 		for (int i = 0; i < level; i++) {
 			ent.next[i] = last[i].next[i];
 			ent.span[i] = last[i].span[i];
@@ -99,7 +99,7 @@ public class SkipList<T extends Comparable<? super T>> {
 
 	// Return first element of list
 	public T first() {
-		return (T) head.next[0].element;
+		return head.next[0].element;
 	}
 
 	// Find largest element that is less than or equal to x
@@ -116,11 +116,11 @@ public class SkipList<T extends Comparable<? super T>> {
 	public T getLinear(int n) {
 		if (n < 0 || n > size - 1)
 			throw new NoSuchElementException();
-		Entry temp = head;
+		Entry<T> temp = head;
 		for (int i = 0; i < n; i++) {
 			temp = temp.next[0];
 		}
-		return (T) temp.element;
+		return temp.element;
 	}
 
 	// Optional operation: Eligible for EC.
@@ -137,7 +137,44 @@ public class SkipList<T extends Comparable<? super T>> {
 
 	// Iterate through the elements of list in sorted order
 	public Iterator<T> iterator() {
-		return null;
+		return new SkipListIterator();
+	}
+
+	protected class SkipListIterator implements Iterator<T> {
+
+		Entry<T> cursor;
+    boolean ready;
+
+
+		SkipListIterator() {
+			cursor = head;
+			ready = false;
+		}
+
+		public boolean hasNext() {
+			return cursor.next != null;
+		}
+
+		public T next() {
+			if(cursor.next == null) throw new NoSuchElementException();
+			cursor = cursor.next[0];
+			ready = true;
+			return cursor.element;
+		}
+
+		public void remove() {
+			if(!ready) throw new IllegalStateException();
+			find(cursor.element);
+			Entry<T> ent = last[0].next[0];
+			int len = ent.next.length;
+			for (int i = 0; i < len; i++) {
+				last[i].next[i] = ent.next[i];
+			}
+			size -= 1;
+			cursor = ent.prev;
+			ready = false; //next() should be called atleast once inorder to call remove()
+		}
+
 	}
 
 	// Return last element of list
@@ -156,13 +193,13 @@ public class SkipList<T extends Comparable<? super T>> {
 	public T remove(T x) {
 		if (!contains(x))
 			return null;
-		Entry ent = last[0].next[0];
+		Entry<T> ent = last[0].next[0];
 		int len = ent.next.length;
 		for (int i = 0; i < len; i++) {
 			last[i].next[i] = ent.next[i];
 		}
 		size -= 1;
-		return (T) ent.element;
+		return ent.element;
 	}
 
 	// Return the number of elements in the list
