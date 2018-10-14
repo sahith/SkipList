@@ -1,5 +1,6 @@
 package sxa180065;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Random;
@@ -8,16 +9,17 @@ import java.util.Random;
 
 public class SkipList<T extends Comparable<? super T>> {
 	static final int PossibleLevels = 33;
-	Entry head, tail; // dummy nodes head and tail
+	Entry<T> head, tail; // dummy nodes head and tail
 	int size; // size of the skipList
 	int maxLevel;
-	Entry[] last; // used by find()
+	Entry<T>[] last; // used by find()
+	int[] spans; // used by find() to store spans while traversing levels
 	Random random;
 
 	static class Entry<E> {
 		E element;
-		Entry[] next;
-		Entry prev;
+		Entry<E>[] next;
+		Entry<E> prev;
 		int span[];
 
 		public Entry(E x, int lev) {
@@ -33,11 +35,12 @@ public class SkipList<T extends Comparable<? super T>> {
 
 	// Constructor
 	public SkipList() {
-		head = new Entry(null, PossibleLevels);
-		tail = new Entry(null, PossibleLevels);
+		head = new Entry<T>(null, PossibleLevels);
+		tail = new Entry<T>(null, PossibleLevels);
 		size = 0;
 		maxLevel = 1;
 		last = new Entry[PossibleLevels];
+		spans = new int[PossibleLevels];
 		random = new Random();
 		// setting head.next to tail
 		for (int i = 0; i < PossibleLevels; i++) {
@@ -48,10 +51,10 @@ public class SkipList<T extends Comparable<? super T>> {
 
 	// Helper function to search for element x
 	public void find(T x) {
-		Entry temp = head;
+		Entry<T> temp = head;
 		int i = maxLevel - 1;
 		while (i >= 0) {
-			while (temp.next[i] != null && x.compareTo((T) (temp.next[i].element)) > 0) {
+			while (temp.next[i] != null && temp.next[i].element != null && x.compareTo(temp.next[i].element) > 0) {
 				temp = temp.next[i];
 			}
 			last[i] = temp;
@@ -67,107 +70,130 @@ public class SkipList<T extends Comparable<? super T>> {
 		return level;
 	}
 
-    // Add x to list. If x already exists, reject it. Returns true if new node is added to list
-    public boolean add(T x) {
-    if(contains(x))
-    	return false;
-    int level = chooseLevel();
-    Entry ent = new Entry(x, level);
-    for(int i = 0;i < level; i++)
-    {
-    	ent.next[i] = last[i].next[i];
-    	last[i].next[i] = ent;
-    }
-    ent.next[0].prev = ent;
-    ent.prev = last[0];
-    size += 1;
-	return true;
-    }
+	// Add x to list. If x already exists, reject it. Returns true if new node is
+	// added to list
+	public boolean add(T x) {
+		int level = chooseLevel();
 
-    // Find smallest element that is greater or equal to x
-public T ceiling(T x) {
-	return (T) last[0].next[0].element;
- }
-    // Does list contain x?
-    public boolean contains(T x) {
-    find(x);  
-	return last[0].next[0] == x;
-    }
+		// Exit if already exist
+		if (contains(x)) return false;
 
-    // Return first element of list
-    public T first() {
-	//if(size==0) { return null; }
-	return head.next[0].element;;
-    }
-
-    // Find largest element that is less than or equal to x
-     public T floor(T x) {
-	 if(contains(x)==true){
-		 return (T) x;
-	 }
-	return (T) last[0].element;
-	
- }
-    // Return element at index n of list.  First element is at index 0.
-    public T get(int n) {
-	return null;
-    }
-
-    // O(n) algorithm for get(n)
-    public T getLinear(int n) {
-	if(n < 0 || n > size-1) 
-		throw new NoSuchElementException();
-	Entry temp = head;
-	for(int i = 0;i < n;i++)
-	{
-		temp = temp.next[0];
+		Entry<T> ent = new Entry<T>(x, level);
+		for (int i = 0; i < level; i++) {
+			ent.next[i] = last[i].next[i];
+			ent.span[i] = last[i].span[i] == 1 ? 1 : last[i].span[i] - spans[i] + 1;
+			last[i].next[i] = ent;
+			last[i].span[i] = last[i].span[i] == 1 ? 1 : spans[i];
+		}
+		ent.next[0].prev = ent;
+		ent.prev = last[0];
+		size += 1;
+		return true;
 	}
-	return (T) temp.element;
-    }
 
-    // Optional operation: Eligible for EC.
-    // O(log n) expected time for get(n). Requires maintenance of spans, as discussed in class.
-    public T getLog(int n) {
-        return null;
-    }
+	// Find smallest element that is greater or equal to x
+	public T ceiling(T x) {
+		if (contains(x))
+			return x;
+		return last[0].next[0].element;
+	}
 
-    // Is the list empty?
-    public boolean isEmpty() {
-	return size == 0;
-    }
+	// Does list contain x?
+	public boolean contains(T x) {
+		find(x);
+		if (last[0].next[0].element == null)
+			return false;
 
-    // Iterate through the elements of list in sorted order
-    public Iterator<T> iterator() {
-	return null;
-    }
+		return x.compareTo(last[0].next[0].element) == 0;
+	}
 
-    // Return last element of list
-    public T last() {
-    return (T) tail.prev.element;
-    }
+	// Return first element of list
+	public T first() {
+		return head.next[0].element;
+	}
 
-    // Optional operation: Reorganize the elements of the list into a perfect skip list
-    // Not a standard operation in skip lists. Eligible for EC.
-    public void rebuild() {
+	// Find largest element that is less than or equal to x
+	public T floor(T x) {
+		if (contains(x))
+			return x;
+		return last[0].element;
+	}
+
+	// Return element at index n of list. First element is at index 0.
+	public T get(int n) {
+		if (n < 0 || n >= size)
+			throw new NoSuchElementException();
+		return getLinear(n);
+	}
+
+	// O(n) algorithm for get(n)
+	public T getLinear(int n) {
+		Entry<T> temp = head;
+		for (int i = 0; i <= n; i++) {
+			temp = temp.next[0];
+		}
+		return temp.element;
+	}
+
+	// Optional operation: Eligible for EC.
+	// O(log n) expected time for get(n). Requires maintenance of spans, as
+	// discussed in class.
+	public T getLog(int n) {
+		Entry<T> temp = head;
+		int i = maxLevel - 1;
+		int distance = 0;
+		while (i >= 0) {
+			// if (distance + temp.next[i].span[i] == n) return temp.next[i].element;
+			while (temp.next[i] != null && distance + temp.next[i].span[i] < n) {
+				System.out.println("span: " + temp.next[i].span[i]);
+				// System.out.println("" + (temp.next[i] == null));
+				distance += temp.next[i].span[i];
+				temp = temp.next[i];
+			}
+			System.out.println("n: " + n + " distance: " + distance + " sz: " + size);
+			i--;
+		}
+		return null;
+	}
+
+	// Is the list empty?
+	public boolean isEmpty() {
+		return size == 0;
+	}
 	
-    }
+	// Iterate through the elements of list in sorted order
+	public Iterator<T> iterator() {
+		return null;
+	}
 
-    // Remove x from list.  Removed element is returned. Return null if x not in list
-    public T remove(T x) {
-    if(!contains(x))
-    	return null;
-    Entry ent = last[0].next[0];
-    int len = ent.next.length;
-    for(int i = 0;i < len; i++)
-    {
-    	last[i].next[i] = ent.next[i];
-    }
-    size -= 1;
-	return (T) ent.element;
-    }
+	// Return last element of list
+	public T last() {
+		return tail.prev.element;
+	}
 
-    // Return the number of elements in the list
-    public int size() {
-	return size;
-    }
+	// Optional operation: Reorganize the elements of the list into a perfect skip
+	// list
+	// Not a standard operation in skip lists. Eligible for EC.
+	public void rebuild() {
+
+	}
+
+	// Remove x from list. Removed element is returned. Return null if x not in list
+	public T remove(T x) {
+		if (!contains(x))
+			return null;
+		Entry<T> ent = last[0].next[0];
+		int len = ent.next.length;
+		for (int i = 0; i < len; i++) {
+			last[i].next[i] = ent.next[i];
+			last[i].next[i].span[i] += ent.next[i].span[i];
+		}
+		size -= 1;
+		return ent.element;
+	}
+
+	// Return the number of elements in the list
+	public int size() {
+		return size;
+	}
 }
