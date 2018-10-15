@@ -26,7 +26,6 @@ public class SkipList<T extends Comparable<? super T>> {
 			element = x;
 			next = new Entry[lev];
 			span = new int[lev];
-			Arrays.fill(span, 1);
 		}
 
 		public E getElement() {
@@ -42,7 +41,7 @@ public class SkipList<T extends Comparable<? super T>> {
 		maxLevel = 1;
 		last = new Entry[PossibleLevels];
 		spans = new int[PossibleLevels];
-		Arrays.fill(spans, 1);
+		// Arrays.fill(spans, 1);
 		random = new Random();
 		// setting head.next to tail
 		for (int i = 0; i < PossibleLevels; i++) {
@@ -55,10 +54,11 @@ public class SkipList<T extends Comparable<? super T>> {
   public void find(T x) {
     Entry<T> temp = head;
     int i = maxLevel - 1;
+    int span = 0;
     while (i >= 0) {
-      int span = temp.span[i];
+      // int span = temp.span[i];
       while (temp.next[i] != null && temp.next[i].element != null && x.compareTo(temp.next[i].element) > 0) {
-        span += temp.span[i];
+        span += temp.span[i] + 1;
         temp = temp.next[i];
       }
       last[i] = temp;
@@ -113,11 +113,11 @@ public class SkipList<T extends Comparable<? super T>> {
       // last[i].element);
       // System.out.println("last: " + last[i].element + " last[i].span[i]: " +
       // last[i].span[i] + " spans: " + spans[i]);
+      boolean isTailNode = last[i].next[i].equals(tail);
       ent.next[i] = last[i].next[i];
-      ent.span[i] = last[i].span[i] - spans[i] + 1;
+      ent.span[i] = isTailNode ? size - spans[0] + spans[i] : spans[i] + last[i].span[i] - spans[0];
       last[i].next[i] = ent;
-      last[i].span[i] = last[i].span[i] == 1 ? 1 : spans[i];
-
+      last[i].span[i] = spans[0] - spans[i];
       // System.out.println("ent: " + ent.span[i]);
     }
     ent.next[0].prev = ent;
@@ -186,22 +186,25 @@ public class SkipList<T extends Comparable<? super T>> {
     Entry<T> temp = head;
     int i = maxLevel - 1;
     n = n + 1;
+    int distance = 0;
 
     while (i >= 0) {
       if (temp.next[i] != null)
         System.out.println("span: " + temp.span[i] + " " + temp.next[i].element);
       // System.out.println("level: " + i + " width: " + temp.span[i]);
-      while (n >= temp.span[i]) {
-        // System.out.println("span: " + temp.span[i] + " " + temp.element + " n: " +
-        // n);
-        // System.out.println("" + (temp.next[i] == null));
-        n -= temp.span[i];
+
+      while (distance + temp.span[i] + 1 <= n) {
+        distance += temp.span[i] + 1;
+        if (distance == n) {
+          temp = temp.next[i];
+          return temp.element;
+        }
         temp = temp.next[i];
       }
       // System.out.println("n: " + n + " distance: " + distance + " sz: " + size);
       i--;
     }
-    return temp.element;
+    return null;
   }
 
 	// Is the list empty?
