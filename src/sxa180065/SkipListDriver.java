@@ -11,7 +11,7 @@ import java.util.Scanner;
 public class SkipListDriver {
 	public static void main(String[] args) throws FileNotFoundException {
 		Scanner sc;
-		File file = new File("./lp2-inputs/lp2-in03.txt");
+		File file = new File("./lp2-inputs/lp2-in14.txt");
 		sc = new Scanner(file);
 		String operation = "";
 		long operand = 0;

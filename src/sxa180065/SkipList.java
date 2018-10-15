@@ -51,22 +51,22 @@ public class SkipList<T extends Comparable<? super T>> {
 	}
 
 	// Helper function to search for element x
-  public void find(T x) {
-    Entry<T> temp = head;
-    int i = maxLevel - 1;
-    int span = 0;
-    while (i >= 0) {
-      // int span = temp.span[i];
-      while (temp.next[i] != null && temp.next[i].element != null && x.compareTo(temp.next[i].element) > 0) {
-        span += temp.span[i] + 1;
-        temp = temp.next[i];
-      }
-      last[i] = temp;
-      // Total distance between nodes when jumping levels
-      spans[i] = span;
-      i--;
-    }
-  }
+	public void find(T x) {
+		Entry<T> temp = head;
+		int i = maxLevel - 1;
+		int span = 0;
+		while (i >= 0) {
+			// int span = temp.span[i];
+			while (temp.next[i] != null && temp.next[i].element != null && x.compareTo(temp.next[i].element) > 0) {
+				span += temp.span[i] + 1;
+				temp = temp.next[i];
+			}
+			last[i] = temp;
+			// Total distance between nodes when jumping levels
+			spans[i] = span;
+			i--;
+		}
+	}
 
 	// Choose the Level of an entry
 	public int chooseLevel() {
@@ -94,40 +94,40 @@ public class SkipList<T extends Comparable<? super T>> {
 		ent.prev = last[0];
 		size += 1;
 		return true;
-  }
-  
-  // Add x to list. If x already exists, reject it. Returns true if new node is
-  // added to list
-  public boolean add(T x) {
-    int level = chooseLevel();
+	}
 
-    // Exit if already exist
-    if (contains(x))
-      return false;
+	// Add x to list. If x already exists, reject it. Returns true if new node is
+	// added to list
+	public boolean add(T x) {
+		int level = chooseLevel();
 
-    Entry<T> ent = new Entry<T>(x, level);
-    for (int i = 0; i < level; i++) {
-      boolean isTailNode = last[i].next[i].equals(tail);
-      ent.next[i] = last[i].next[i];
-      ent.span[i] = isTailNode ? size - spans[0] + spans[i] : spans[i] + last[i].span[i] - spans[0];
-      last[i].next[i] = ent;
-      last[i].span[i] = spans[0] - spans[i];
-      // System.out.println("ent: " + ent.span[i]);
-    }
-    ent.next[0].prev = ent;
-    ent.prev = last[0];
-    size += 1;
+		// Exit if already exist
+		if (contains(x))
+			return false;
 
-    for (int i = level; i < PossibleLevels; i++) {
-      if (i < maxLevel) {
-        last[i].span[i] += 1;
-      } else {
-        head.span[i] += 1;
-      }
-    }
+		Entry<T> ent = new Entry<T>(x, level);
+		for (int i = 0; i < level; i++) {
+			boolean isTailNode = last[i].next[i].equals(tail);
+			ent.next[i] = last[i].next[i];
+			ent.span[i] = isTailNode ? size - spans[0] + spans[i] : spans[i] + last[i].span[i] - spans[0];
+			last[i].next[i] = ent;
+			last[i].span[i] = spans[0] - spans[i];
+			// System.out.println("ent: " + ent.span[i]);
+		}
+		ent.next[0].prev = ent;
+		ent.prev = last[0];
+		size += 1;
 
-    return true;
-  }
+		for (int i = level; i < PossibleLevels; i++) {
+			if (i < maxLevel) {
+				last[i].span[i] += 1;
+			} else {
+				head.span[i] += 1;
+			}
+		}
+
+		return true;
+	}
 
 	// Find smallest element that is greater or equal to x
 	public T ceiling(T x) {
@@ -174,28 +174,28 @@ public class SkipList<T extends Comparable<? super T>> {
 	}
 
 	// Optional operation: Eligible for EC.
-  // O(log n) expected time for get(n). Requires maintenance of spans, as
-  // discussed in class.
-  public T getLog(int n) {
-    Entry<T> temp = head;
-    int i = maxLevel - 1;
-    n = n + 1;
-    int distance = 0;
+	// O(log n) expected time for get(n). Requires maintenance of spans, as
+	// discussed in class.
+	public T getLog(int n) {
+		Entry<T> temp = head;
+		int i = maxLevel - 1;
+		n = n + 1;
+		int distance = 0;
 
-    while (i >= 0) {
-      while (distance + temp.span[i] + 1 <= n) {
-        distance += temp.span[i] + 1;
-        if (distance == n) {
-          temp = temp.next[i];
-          return temp == null ? null : temp.element;
-        }
-        temp = temp.next[i];
-      }
-      // System.out.println("n: " + n + " distance: " + distance + " sz: " + size);
-      i--;
-    }
-    return null;
-  }
+		while (i >= 0) {
+			while (distance + temp.span[i] + 1 <= n) {
+				distance += temp.span[i] + 1;
+				if (distance == n) {
+					temp = temp.next[i];
+					return temp == null ? null : temp.element;
+				}
+				temp = temp.next[i];
+			}
+			// System.out.println("n: " + n + " distance: " + distance + " sz: " + size);
+			i--;
+		}
+		return null;
+	}
 
 	// Is the list empty?
 	public boolean isEmpty() {
@@ -241,7 +241,6 @@ public class SkipList<T extends Comparable<? super T>> {
 			ent.next[0].prev = last[0];
 			size -= 1;
 			cursor = ent.prev;
-			System.out.println("Current cursor "+ cursor.element);
 			ready = false; // next() should be called atleast once inorder to call remove()
 		}
 
@@ -268,28 +267,25 @@ public class SkipList<T extends Comparable<? super T>> {
 		for (int i = 0; i < len; i++) {
 			last[i].next[i] = ent.next[i];
 			last[i].span[i] += ent.span[i];
-    }
-		System.out.println(x);
+		}
 		ent.next[0].prev = last[0];
-    int index = len;
-    // Adjust remaining nodes from level to maxLevel
-    while (index < maxLevel) {
-      last[index].span[index] -= 1;
-      index++;
-    }
+		int index = len;
+		// Adjust remaining nodes from level to maxLevel
+		while (index < maxLevel) {
+			last[index].span[index] -= 1;
+			index++;
+		}
 		size -= 1;
 		return ent.element;
 	}
-	
-	public  void printList() {
+
+	public void printList() {
 		Entry<T> temp = head;
-		while(!temp.equals(tail))
-		{
-			System.out.println(" element "+temp.element+" Level Size "+temp.next.length);
+		while (!temp.equals(tail)) {
+			System.out.println(" element " + temp.element + " Level Size " + temp.next.length);
 			int n = temp.next.length;
-			for(int i = 0;i < n;i++)
-			{
-				System.out.print("i "+i+" span "+temp.span[i]+" ");
+			for (int i = 0; i < n; i++) {
+				System.out.print("i " + i + " span " + temp.span[i] + " ");
 			}
 			System.out.println();
 			temp = temp.next[0];
@@ -307,50 +303,8 @@ public class SkipList<T extends Comparable<? super T>> {
 		for (int i = 1; i <= 10; i++) {
 			sl.add(Integer.valueOf(i));
 		}
-		
-		
+
 		sl.printList();
-/*		
-		Iterator<Integer> it = sl.iterator();
-		
-		
-		Scanner in = new Scanner(System.in);
-		System.out.println("Enter the operation to be done\n"
-    		+ "1. Move next\n"
-    		+ "2. Add element\n"
-    		+ "3. Remove\n"
-    		+ "Default. Exit");
-		
-		whileloop:
-		while(in.hasNext()) {
-	    int com = in.nextInt();
-	    switch(com) {
-	    case 1:  // Move to next element and print it
-			if (it.hasNext()) {
-			    System.out.println(it.next());
-			} else {
-				System.out.println("Cursor is pointing to the tail node therefore it has no next");
-			    break whileloop;
-			}
-		break;
-	    case 2:  // Add element to the SkipList;
-	    	com = in.nextInt();
-	        sl.add(com);
-			break;  
-	    case 3: //Remove
-	    	it.remove();
-	    	break;
-	    default:  // Exit loop
-		 break whileloop;
-	    }
-	    sl.printList();
-	    System.out.println("Enter the operation to be done\n"
-	    		+ "1. Move next\n"
-	    		+ "2. Add element\n"
-	    		+ "3. Remove\n"
-	    		+ "Default. Exit");
-    }
-		*/
 
 	}
 }
