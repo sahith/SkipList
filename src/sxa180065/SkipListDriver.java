@@ -17,7 +17,7 @@ public class SkipListDriver {
     // } else {
     // sc = new Scanner(System.in);
     // }
-    File file = new File("./lp2-inputs/lp2-in11.txt");
+    File file = new File("./lp2-inputs/lp2-in12.txt");
     sc = new Scanner(file);
     String operation = "";
     long operand = 0;
