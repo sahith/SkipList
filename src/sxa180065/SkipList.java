@@ -238,7 +238,13 @@ public class SkipList<T extends Comparable<? super T>> {
 		for (int i = 0; i < len; i++) {
 			last[i].next[i] = ent.next[i];
 			last[i].next[i].span[i] += ent.next[i].span[i];
-		}
+    }
+    int index = len;
+    // Adjust remaining nodes from level to maxLevel
+    while (index < maxLevel) {
+      last[index].span[index]--;
+      index++;
+    }
 		size -= 1;
 		return ent.element;
 	}
