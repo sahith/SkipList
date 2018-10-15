@@ -26,6 +26,7 @@ public class SkipList<T extends Comparable<? super T>> {
 			element = x;
 			next = new Entry[lev];
 			span = new int[lev];
+			Arrays.fill(span, 1);
 		}
 
 		public E getElement() {
@@ -41,6 +42,7 @@ public class SkipList<T extends Comparable<? super T>> {
 		maxLevel = 1;
 		last = new Entry[PossibleLevels];
 		spans = new int[PossibleLevels];
+		Arrays.fill(spans, 1);
 		random = new Random();
 		// setting head.next to tail
 		for (int i = 0; i < PossibleLevels; i++) {
@@ -50,17 +52,21 @@ public class SkipList<T extends Comparable<? super T>> {
 	}
 
 	// Helper function to search for element x
-	public void find(T x) {
-		Entry<T> temp = head;
-		int i = maxLevel - 1;
-		while (i >= 0) {
-			while (temp.next[i] != null && temp.next[i].element != null && x.compareTo(temp.next[i].element) > 0) {
-				temp = temp.next[i];
-			}
-			last[i] = temp;
-			i--;
-		}
-	}
+  public void find(T x) {
+    Entry<T> temp = head;
+    int i = maxLevel - 1;
+    while (i >= 0) {
+      int span = temp.span[i];
+      while (temp.next[i] != null && temp.next[i].element != null && x.compareTo(temp.next[i].element) > 0) {
+        span += temp.span[i];
+        temp = temp.next[i];
+      }
+      last[i] = temp;
+      // Total distance between nodes when jumping levels
+      spans[i] = span;
+      i--;
+    }
+  }
 
 	// Choose the Level of an entry
 	public int chooseLevel() {
@@ -72,7 +78,7 @@ public class SkipList<T extends Comparable<? super T>> {
 
 	// Add x to list. If x already exists, reject it. Returns true if new node is
 	// added to list
-	public boolean add(T x) {
+	public boolean workingAdd(T x) {
 		int level = chooseLevel();
 
 		// Exit if already exist
@@ -89,7 +95,45 @@ public class SkipList<T extends Comparable<? super T>> {
 		ent.prev = last[0];
 		size += 1;
 		return true;
-	}
+  }
+  
+  // Add x to list. If x already exists, reject it. Returns true if new node is
+  // added to list
+  public boolean add(T x) {
+    int level = chooseLevel();
+
+    // Exit if already exist
+    if (contains(x))
+      return false;
+
+    System.out.println(level + " " + x);
+    Entry<T> ent = new Entry<T>(x, level);
+    for (int i = 0; i < level; i++) {
+      // System.out.println("\nlevel " + i + " span: " + last[i].span[i] + " " +
+      // last[i].element);
+      // System.out.println("last: " + last[i].element + " last[i].span[i]: " +
+      // last[i].span[i] + " spans: " + spans[i]);
+      ent.next[i] = last[i].next[i];
+      ent.span[i] = last[i].span[i] - spans[i] + 1;
+      last[i].next[i] = ent;
+      last[i].span[i] = last[i].span[i] == 1 ? 1 : spans[i];
+
+      // System.out.println("ent: " + ent.span[i]);
+    }
+    ent.next[0].prev = ent;
+    ent.prev = last[0];
+    size += 1;
+
+    for (int i = level; i < PossibleLevels; i++) {
+      if (i < maxLevel) {
+        last[i].span[i] += 1;
+      } else {
+        head.span[i] += 1;
+      }
+    }
+
+    return true;
+  }
 
 	// Find smallest element that is greater or equal to x
 	public T ceiling(T x) {
@@ -123,7 +167,7 @@ public class SkipList<T extends Comparable<? super T>> {
 	public T get(int n) {
 		if (n < 0 || n >= size)
 			throw new NoSuchElementException();
-		return getLinear(n);
+		return getLog(n);
 	}
 
 	// O(n) algorithm for get(n)
@@ -136,25 +180,29 @@ public class SkipList<T extends Comparable<? super T>> {
 	}
 
 	// Optional operation: Eligible for EC.
-	// O(log n) expected time for get(n). Requires maintenance of spans, as
-	// discussed in class.
-	public T getLog(int n) {
-		Entry<T> temp = head;
-		int i = maxLevel - 1;
-		int distance = 0;
-		while (i >= 0) {
-			// if (distance + temp.next[i].span[i] == n) return temp.next[i].element;
-			while (temp.next[i] != null && distance + temp.next[i].span[i] < n) {
-				System.out.println("span: " + temp.next[i].span[i]);
-				// System.out.println("" + (temp.next[i] == null));
-				distance += temp.next[i].span[i];
-				temp = temp.next[i];
-			}
-			System.out.println("n: " + n + " distance: " + distance + " sz: " + size);
-			i--;
-		}
-		return null;
-	}
+  // O(log n) expected time for get(n). Requires maintenance of spans, as
+  // discussed in class.
+  public T getLog(int n) {
+    Entry<T> temp = head;
+    int i = maxLevel - 1;
+    n = n + 1;
+
+    while (i >= 0) {
+      if (temp.next[i] != null)
+        System.out.println("span: " + temp.span[i] + " " + temp.next[i].element);
+      // System.out.println("level: " + i + " width: " + temp.span[i]);
+      while (n >= temp.span[i]) {
+        // System.out.println("span: " + temp.span[i] + " " + temp.element + " n: " +
+        // n);
+        // System.out.println("" + (temp.next[i] == null));
+        n -= temp.span[i];
+        temp = temp.next[i];
+      }
+      // System.out.println("n: " + n + " distance: " + distance + " sz: " + size);
+      i--;
+    }
+    return temp.element;
+  }
 
 	// Is the list empty?
 	public boolean isEmpty() {
