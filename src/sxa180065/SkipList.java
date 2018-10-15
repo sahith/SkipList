@@ -106,13 +106,8 @@ public class SkipList<T extends Comparable<? super T>> {
     if (contains(x))
       return false;
 
-    System.out.println(level + " " + x);
     Entry<T> ent = new Entry<T>(x, level);
     for (int i = 0; i < level; i++) {
-      // System.out.println("\nlevel " + i + " span: " + last[i].span[i] + " " +
-      // last[i].element);
-      // System.out.println("last: " + last[i].element + " last[i].span[i]: " +
-      // last[i].span[i] + " spans: " + spans[i]);
       boolean isTailNode = last[i].next[i].equals(tail);
       ent.next[i] = last[i].next[i];
       ent.span[i] = isTailNode ? size - spans[0] + spans[i] : spans[i] + last[i].span[i] - spans[0];
@@ -189,15 +184,11 @@ public class SkipList<T extends Comparable<? super T>> {
     int distance = 0;
 
     while (i >= 0) {
-      if (temp.next[i] != null)
-        System.out.println("span: " + temp.span[i] + " " + temp.next[i].element);
-      // System.out.println("level: " + i + " width: " + temp.span[i]);
-
       while (distance + temp.span[i] + 1 <= n) {
         distance += temp.span[i] + 1;
         if (distance == n) {
           temp = temp.next[i];
-          return temp.element;
+          return temp == null ? null : temp.element;
         }
         temp = temp.next[i];
       }
@@ -237,12 +228,12 @@ public class SkipList<T extends Comparable<? super T>> {
 		int len = ent.next.length;
 		for (int i = 0; i < len; i++) {
 			last[i].next[i] = ent.next[i];
-			last[i].next[i].span[i] += ent.next[i].span[i];
+			last[i].span[i] += ent.span[i];
     }
     int index = len;
     // Adjust remaining nodes from level to maxLevel
     while (index < maxLevel) {
-      last[index].span[index]--;
+      last[index].span[index] -= 1;
       index++;
     }
 		size -= 1;
